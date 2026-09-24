@@ -3,6 +3,7 @@ import { AuthContext } from "../../../Context/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
+import { getAuth } from "firebase/auth";
 import RobotLoader from "../../../components/RobotLoader/RobotLoader";
 import "../../../components/RobotLoader/RobotLoader.css";
 
@@ -25,13 +26,23 @@ const EditProfile = () => {
     }
 
     try {
-      await axios.put(`${API_URL}/users/${profile.email}`, { displayName, photoURL });
+      const currentUser = getAuth().currentUser;
+      if (!currentUser) {
+        toast.error("Please login first");
+        return;
+      }
+      const token = await currentUser.getIdToken();
+      await axios.put(
+        `${API_URL}/users/${profile.email}`,
+        { displayName, photoURL },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       await refreshProfile();
       toast.success("Profile updated successfully!");
       navigate("/dashboard/employeeProfile");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update profile");
+      toast.error(err?.response?.data?.message || "Failed to update profile");
     }
   };
 

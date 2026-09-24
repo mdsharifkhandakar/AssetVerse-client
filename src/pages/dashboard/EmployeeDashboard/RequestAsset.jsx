@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { AuthContext } from "../../../Context/AuthContext";
 import RobotLoader from "../../../components/RobotLoader/RobotLoader";
 import "../../../components/RobotLoader/RobotLoader.css";
+import { getAuth } from "firebase/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -76,7 +77,17 @@ const RequestAsset = () => {
     };
 
     try {
-      await axios.post(`${API_URL}/requests`, requestData);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        toast.error("Please login first");
+        return;
+      }
+      const token = await currentUser.getIdToken();
+
+      await axios.post(`${API_URL}/requests`, requestData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       toast.success("Asset request submitted successfully!");
       setSelectedAsset(null);
       setNote("");
@@ -85,7 +96,8 @@ const RequestAsset = () => {
       setRequests((prev) => [...prev.filter(r => r.assetId !== selectedAsset._id), requestData]);
     } catch (err) {
       console.error("Request failed", err);
-      toast.error("Failed to submit request");
+      const msg = err?.response?.data?.message || "Failed to submit request";
+      toast.error(msg);
     }
   };
 

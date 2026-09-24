@@ -15,6 +15,9 @@ including public pages, authentication, HR management pages, employee
 dashboard pages, asset management, requests, team information, profiles,
 and package management.
 
+Employees request company assets; HR approves/rejects requests, tracks
+inventory, manages team affiliations, and upgrades packages.
+
 ## Key Features
 
 ### Public
@@ -22,7 +25,7 @@ and package management.
 -   Responsive landing page
 -   Hero section with Framer Motion animations
 -   About and feature sections
--   Dynamic subscription packages
+-   Dynamic subscription packages from the database
 -   Testimonials and statistics
 -   How It Works section
 -   FAQ and contact CTA
@@ -32,29 +35,32 @@ and package management.
 ### HR Manager
 
 -   HR dashboard
--   Company asset list
+-   Company asset list with server-side pagination (`?page=&limit=`)
 -   Search assets
 -   Add assets
 -   Edit assets
 -   Delete assets
 -   Asset type selection: Returnable / Non-returnable
--   Employee request management
+-   Employee request management (employee, asset, date, status)
 -   Approve/reject requests
 -   Employee list
 -   Employee removal
--   Package upgrade page
--   HR profile management
--   Dashboard charts and analytics
+-   Direct asset assign for already affiliated employees
+-   Package upgrade page with Stripe checkout and payment history
+-   HR profile management (email read-only)
+-   Dashboard charts (returnable vs non-returnable pie, top 5 requested bar)
 
 ### Employee
 
--   My Assets
+-   My Assets from all companies
 -   Request an Asset
 -   Asset search and filtering
--   My Team
+-   Request date, approval date, and status columns
+-   My Team with position and upcoming birthdays
 -   Company affiliations
--   Profile management
--   Return workflow for returnable assets where supported
+-   Profile management (email read-only)
+-   Return workflow for returnable approved assets
+-   Print/PDF download of assigned assets
 
 ## Technology
 
@@ -64,9 +70,19 @@ and package management.
 -   Firebase Authentication
 -   Tailwind CSS
 -   DaisyUI
--   Framer Motion
+-   motion (Framer Motion animations)
 -   Recharts
+-   axios, jspdf, jspdf-autotable
+-   lucide-react, react-hot-toast
 -   React Icons
+
+## npm Packages
+
+- react, react-dom, react-router
+- firebase, axios
+- recharts, jspdf, jspdf-autotable
+- daisyui, tailwindcss, @tailwindcss/vite
+- motion (animations), lucide-react, react-hot-toast
 
 ## Environment Variables
 
@@ -86,12 +102,17 @@ VITE_appId=your_firebase_app_id
 Do not commit `.env` or real Firebase configuration values that should
 remain private to your deployment setup.
 
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Backend base URL (e.g. `https://asset-verse-server-jade.vercel.app` or `http://localhost:3000`) |
+| `VITE_apiKey`, `VITE_authDomain`, `VITE_projectId`, `VITE_storageBucket`, `VITE_messagingSenderId`, `VITE_appId` | Firebase web config |
+
 ## Local Setup
 
 ### 1. Clone the repository
 
 ``` bash
-git clone <your-client-repository-url>
+git clone https://github.com/mdsharifkhandakar/AssetVerse-client.git
 cd AssetVerse-client
 ```
 
@@ -116,10 +137,12 @@ The development server normally runs at:
 ``` text
 http://localhost:5173
 ```
+
 ### 5. Create a production build
 
 ``` bash
 npm run build
+npm run preview
 ```
 
 ## Deployment
@@ -132,8 +155,11 @@ Production API:
 https://asset-verse-server-jade.vercel.app
 ```
 
-For SPA route support, the Netlify deployment should serve `index.html`
-for client-side routes.
+For SPA route support, `public/_redirects` is included:
+
+``` text
+/* /index.html   200
+```
 
 ## Project Structure
 
@@ -167,6 +193,11 @@ assetverse-client.netlify.app
 AssetVerse uses DaisyUI with Tailwind CSS for the interface and is
 designed for desktop, tablet, and mobile screens.
 
+## Repositories
+
+- Client: https://github.com/mdsharifkhandakar/AssetVerse-client
+- Server: https://github.com/mdsharifkhandakar/AssetVerse-server
+
 ## Assignment
 
 This project was developed for the AssetVerse Corporate Asset Management
@@ -179,4 +210,3 @@ management, and production deployment requirements.
 ## License
 
 This project is created for educational and portfolio purposes.
-

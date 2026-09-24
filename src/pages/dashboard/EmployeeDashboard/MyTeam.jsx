@@ -39,8 +39,13 @@ const MyTeam = () => {
         if (!selectedCompany) return;
 
         axios
-            .get(`${API_URL}/company-employees?company=${selectedCompany}`)
-            .then(res => setTeamMembers(res.data || []))
+            .get(`${API_URL}/company-employees`, {
+                params: { company: selectedCompany, page: 1, limit: 100 },
+            })
+            .then(res => {
+                const list = Array.isArray(res.data) ? res.data : res.data?.employees || [];
+                setTeamMembers(list);
+            })
             .catch(() => toast.error("Failed to load team members"));
     }, [selectedCompany]);
 
@@ -113,7 +118,7 @@ const MyTeam = () => {
                                         {member.email}
                                     </p>
                                     <span className="badge badge-outline mt-2 text-blue-600 border-blue-400">
-                                        Employee
+                                        {member.position || "Employee"}
                                     </span>
                                 </div>
                             </div>

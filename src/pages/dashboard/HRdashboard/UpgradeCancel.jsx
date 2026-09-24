@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 const UpgradeCancel = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.removeItem("av_pending_upgrade");
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-base-100 px-4">

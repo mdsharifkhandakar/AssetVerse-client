@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { AuthContext } from "../../../Context/AuthContext";
 import RobotLoader from "../../../components/RobotLoader/RobotLoader";
 import "../../../components/RobotLoader/RobotLoader.css";
+import { getAuth } from "firebase/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -12,41 +13,50 @@ const Requests = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch all requests for this HR
+    const fetchRequests = async () => {
+        if (!user?.email) return;
+        try {
+            const res = await axios.get(`${API_URL}/requests?hrEmail=${user.email}`);
+            setRequests(res.data);
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to fetch requests");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!user?.email) return;
+        fetchRequests();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.email]);
 
-        axios
-            .get(`${API_URL}/requests?hrEmail=${user.email}`)
-            .then((res) => {
-                setRequests(res.data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                toast.error("Failed to fetch requests");
-                setLoading(false);
-            });
-    }, [user]);
-
-    // Approve or Reject request
     const handleAction = async (id, action) => {
         try {
-            await axios.put(`${API_URL}/requests/${id}`, {
-                requestStatus: action,
-                processedBy: user.email
-            });
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                toast.error("Please login first");
+                return;
+            }
+            const token = await currentUser.getIdToken();
 
-            setRequests((prev) =>
-                prev.map((r) =>
-                    r._id === id ? { ...r, requestStatus: action } : r
-                )
+            await axios.put(
+                `${API_URL}/requests/${id}`,
+                {
+                    requestStatus: action,
+                    processedBy: user.email,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
+            await fetchRequests();
             toast.success(`Request ${action} successfully`);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to update request");
+            const msg = err?.response?.data?.message || "Failed to update request";
+            toast.error(msg);
         }
     };
 
@@ -91,6 +101,9 @@ const Requests = () => {
                                     Type
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     Status
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
@@ -125,6 +138,11 @@ const Requests = () => {
                                     </td>
                                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-base-content/70">
                                         {request.assetType}
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-base-content/70 text-sm">
+                                        {request.requestDate
+                                            ? new Date(request.requestDate).toLocaleDateString()
+                                            : "—"}
                                     </td>
                                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${request.requestStatus === "pending"

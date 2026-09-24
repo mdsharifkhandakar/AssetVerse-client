@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import RobotLoader from "../../../components/RobotLoader/RobotLoader";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getAuth } from "firebase/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -31,6 +32,9 @@ const MyAssets = () => {
           assetName: a.assetName || a.productName || "—",
           assetType: a.assetType || a.productType || "—",
           companyName: a.companyName || "—",
+          requestDate: a.requestDate
+            ? new Date(a.requestDate).toLocaleDateString()
+            : "—",
           assignmentDate: a.assignmentDate
             ? new Date(a.assignmentDate).toLocaleDateString()
             : "—",
@@ -59,14 +63,27 @@ const MyAssets = () => {
     if (!window.confirm("Are you sure you want to return this asset?")) return;
 
     try {
-      await axios.put(`${API_URL}/assigned-assets/${id}`);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        toast.error("Please login first");
+        return;
+      }
+      const token = await currentUser.getIdToken();
+
+      await axios.put(
+        `${API_URL}/assigned-assets/${id}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setAssets((prev) =>
         prev.map((a) => (a._id === id ? { ...a, status: "returned" } : a))
       );
       toast.success("Asset returned successfully!");
     } catch (err) {
       console.error("Return failed", err);
-      toast.error("Failed to return asset");
+      const msg = err?.response?.data?.message || "Failed to return asset";
+      toast.error(msg);
     }
   };
 
@@ -89,13 +106,13 @@ const MyAssets = () => {
 
       autoTable(doc, {
         startY: 25,
-        head: [["S/N", "Asset Name", "Type", "Company", "Assigned Date", "Approval Date", "Status"]],
+        head: [["S/N", "Asset Name", "Type", "Company", "Request Date", "Approval Date", "Status"]],
         body: filteredAssets.map((a, index) => [
           index + 1,
           String(a.assetName),
           String(a.assetType),
           String(a.companyName),
-          String(a.assignmentDate),
+          String(a.requestDate),
           String(a.approvalDate),
           String(a.status),
         ]),
@@ -166,7 +183,7 @@ const MyAssets = () => {
                 <th>Asset</th>
                 <th>Type</th>
                 <th>Company</th>
-                <th>Assigned Date</th>
+                <th>Request Date</th>
                 <th>Approval Date</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -186,7 +203,7 @@ const MyAssets = () => {
                   </td>
                   <td>{asset.assetType}</td>
                   <td>{asset.companyName}</td>
-                  <td>{asset.assignmentDate}</td>
+                  <td>{asset.requestDate}</td>
                   <td>{asset.approvalDate}</td>
                   <td>{asset.status}</td>
                   <td>

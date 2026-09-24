@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { getAuth } from "firebase/auth";
 import { AuthContext } from "../../../Context/AuthContext";
 import RobotLoader from "../../../components/RobotLoader/RobotLoader";
 import "../../../components/RobotLoader/RobotLoader.css";
@@ -44,12 +45,34 @@ const Upgrade = () => {
     try {
       setProcessingId(pkg._id);
 
-      const res = await axios.post(`${SERVER_URL}/create-checkout-session`, {
-        cost: Number(pkg.price),
-        parcelName: pkg.name,
-        senderEmail: profile.email,
-        parcelId: pkg._id,
-      });
+      // Persist package choice so success page can apply the upgrade after Stripe
+      localStorage.setItem(
+        "av_pending_upgrade",
+        JSON.stringify({
+          packageName: pkg.name,
+          employeeLimit: pkg.employeeLimit,
+          amount: pkg.price,
+        })
+      );
+
+      const currentUser = getAuth().currentUser;
+      if (!currentUser) {
+        localStorage.removeItem("av_pending_upgrade");
+        toast.error("Please login first");
+        return;
+      }
+      const token = await currentUser.getIdToken();
+
+      const res = await axios.post(
+        `${SERVER_URL}/create-checkout-session`,
+        {
+          cost: Number(pkg.price),
+          parcelName: pkg.name,
+          senderEmail: profile.email,
+          parcelId: pkg._id,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (res.data?.url) {
         window.location.href = res.data.url; // redirect to Stripe
@@ -58,6 +81,7 @@ const Upgrade = () => {
       }
     } catch (err) {
       console.error("Stripe error:", err);
+      localStorage.removeItem("av_pending_upgrade");
       toast.error("Payment initialization failed");
     } finally {
       setProcessingId(null);
@@ -153,7 +177,7 @@ const Upgrade = () => {
                 {payments.map((pay, index) => (
                   <tr key={pay._id}>
                     <td>{index + 1}</td>
-                    <td>{new Date(pay.createdAt).toLocaleString()}</td>
+                    <td>{new Date(pay.paymentDate || pay.createdAt).toLocaleString()}</td>
                     <td>{pay.packageName}</td>
                     <td>${pay.amount}</td>
                     <td>{pay.status}</td>
