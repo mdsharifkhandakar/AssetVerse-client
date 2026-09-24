@@ -116,4 +116,67 @@ The development server normally runs at:
 ``` text
 http://localhost:5173
 ```
+### 5. Create a production build
+
+``` bash
+npm run build
+```
+
+## Deployment
+
+The client is deployed on Netlify.
+
+Production API:
+
+``` text
+https://asset-verse-server-jade.vercel.app
+```
+
+For SPA route support, the Netlify deployment should serve `index.html`
+for client-side routes.
+
+## Project Structure
+
+``` text
+src/
+├── assets/
+├── components/
+├── layouts/
+├── pages/
+├── providers/
+├── routes/
+├── utils/
+└── main.jsx
+```
+
+The exact folder structure may change as the project evolves.
+
+## Authentication
+
+Firebase Authentication is used for email/password authentication.
+
+The production Firebase project must authorize the production frontend
+domain:
+
+``` text
+assetverse-client.netlify.app
+```
+
+## UI
+
+AssetVerse uses DaisyUI with Tailwind CSS for the interface and is
+designed for desktop, tablet, and mobile screens.
+
+## Assignment
+
+This project was developed for the AssetVerse Corporate Asset Management
+System assignment.
+
+The implementation follows the required HR and Employee workflows, asset
+management flow, request workflow, company affiliations, package
+management, and production deployment requirements.
+
+## License
+
+This project is created for educational and portfolio purposes.
 
